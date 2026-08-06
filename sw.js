@@ -4,7 +4,7 @@ const ASSETS = [
   './index.html',
   './manifest.json',
   'https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js',
-  'https://static.cloudbase.net/cloudbase-js-sdk/latest/cloudbase.full.js'
+  'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js'
 ];
 
 self.addEventListener('install', e => {

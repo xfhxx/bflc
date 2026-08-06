@@ -8,7 +8,7 @@
 <meta name="theme-color" content="#007AFF">
 <title>我的工作台</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-<script src="https://static.cloudbase.net/cloudbase-js-sdk/latest/cloudbase.full.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <link rel="manifest" href="manifest.json">
 <meta name="apple-mobile-web-app-title" content="工作台">
 <style>
@@ -844,37 +844,31 @@ function applySectionColors(){
 }
 
 // ============================================================
-//  CLOUD SYNC (CloudBase)
+//  CLOUD SYNC (Supabase)
 // ============================================================
-const CB_CONFIG = {
-  envId: 'xf-zm-888-d4gzyjpql70424095',
-  accessKey: 'eyJhbGciOiJSUzI1NiIsImtpZCI6IjlkMWRjMzFlLWI0ZDAtNDQ4Yi1hNzZmLWIwY2M2M2Q4MTQ5OCJ9.eyJpc3MiOiJodHRwczovL3hmLXptLTg4OC1kNGd6eWpwcWw3MDQyNDA5NS5hcC1zaGFuZ2hhaS50Y2ItYXBpLnRlbmNlbnRjbG91ZGFwaS5jb20iLCJzdWIiOiJhbm9uIiwiYXVkIjoieGYtem0tODg4LWQ0Z3p5anBxbDcwNDI0MDk1IiwiZXhwIjo0MDg5NTEyMjkzLCJpYXQiOjE3ODU4MjkwOTMsIm5vbmNlIjoiaEpuZWZlRS1RLTJQLVlsLXdmRlNtUSIsImF0X2hhc2giOiJoSm5lZmVFLVEtMlAtWWwtd2ZGU21RIiwibmFtZSI6IkFub255bW91cyIsInNjb3BlIjoiYW5vbnltb3VzIiwicHJvamVjdF9pZCI6InhmLXptLTg4OC1kNGd6eWpwcWw3MDQyNDA5NSIsIm1ldGEiOnsicGxhdGZvcm0iOiJQdWJsaXNoYWJsZUtleSJ9LCJ1c2VyX3R5cGUiOiIiLCJjbGllbnRfdHlwZSI6ImNsaWVudF91c2VyIiwiaXNfc3lzdGVtX2FkbWluIjpmYWxzZX0.r-qRsFOK6-4bYTTNc4QQs4fB7wrMuBw7Sb8qYDrYZ2BOUc2Hu9RfUovv8DyJDpF0M6mH9mMOuj7taYNIv95JGR2YD-YYZusFgQfF3spXUe687Lre4NfRGjs-FZ0LpENDWLYrnEjDrPJKLoH4LAJj4_c__QSV1cpkvgTOoMj8l-OBfYi2-SL3PCYaLuA3S0uc407UgmsaQp3qQ7sVunaGy681-Tf_6_pxbsbic8R8mHeowQQBiSEAZbO5Ds-bEiivu7snQlBRRmVSCWKdU1vU8s_a40GZ8WJGOP5AOK6H1Tc-IPU1QPD4HuUlcZ7ZFbXk0S3NsK_HXQFAQuY3UQjYLw'
+const SB_CONFIG = {
+  url: 'https://fbwhagnlyyksbiaxgzqn.supabase.co',
+  anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZid2hhZ25seXlrc2JpYXhnenFuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU5OTg3MTIsImV4cCI6MjEwMTU3NDcxMn0.7R-9o6SXFx78taaLJ-SlnoDOLoUZ_PI51-K49eihy-4'
 };
-let CB_APP = null;
-let CB_DB = null;
+let SB = null;
 let CB_READY = false;
-let CB_UID = null;       // 当前用户唯一标识
-let CB_USERNAME = null;  // 当前用户名
+let CB_UID = null;
+let CB_USERNAME = null;
 let cloudSaveTimer = null;
 let cloudLoading = false;
 
-function initCloudBase(){
-  if(!CB_CONFIG.envId){
-    console.warn('CloudBase 未配置 envId，使用本地存储模式');
+function initSupabase(){
+  if(!SB_CONFIG.url || !SB_CONFIG.anonKey){
+    console.warn('Supabase 未配置，使用本地存储模式');
     document.getElementById('cloudDot').classList.add('offline');
     document.getElementById('cloudUser').textContent = '本地模式';
     return false;
   }
   try {
-    CB_APP = cloudbase.init({
-      env: CB_CONFIG.envId,
-      region: 'ap-shanghai',
-      accessKey: CB_CONFIG.accessKey || undefined
-    });
-    CB_DB = CB_APP.database();
+    SB = supabase.createClient(SB_CONFIG.url, SB_CONFIG.anonKey);
     CB_READY = true;
     return true;
-  } catch(e){ console.error('CloudBase init error', e); return false; }
+  } catch(e){ console.error('Supabase init error', e); return false; }
 }
 
 function setCloudStatus(state, label){
@@ -886,19 +880,10 @@ function setCloudStatus(state, label){
   if(label) txt.textContent=label;
 }
 
-// 简单 hash（非加密安全，仅用于避免明文存储密码）
 function simpleHash(str){
   let h=0;
   for(let i=0;i<str.length;i++){ h=((h<<5)-h)+str.charCodeAt(i); h|=0; }
   return String(h);
-}
-
-// ---- Anonymous Login (enables SDK DB access) ----
-async function cbAnonymousLogin(){
-  const auth = CB_APP.auth;
-  const { data, error } = await auth.signInAnonymously();
-  if(error){ throw error; }
-  return data;
 }
 
 // ---- Auth UI ----
@@ -920,18 +905,15 @@ async function doRegister(){
   if(p!==p2){ showAuthError('两次密码不一致'); return; }
   const btn=document.getElementById('regBtn'); btn.disabled=true; btn.textContent='注册中…';
   try {
-    await cbAnonymousLogin();
-    // Check if username already exists
-    const { data: existing } = await CB_DB.collection('users').where({username:u}).get();
+    const { data: existing } = await SB.from('users').select('uid').eq('username', u);
     if(existing && existing.length>0){ showAuthError('用户名已存在'); return; }
-    // Create user record
     CB_UID = uid();
-    await CB_DB.collection('users').add({
+    const { error } = await SB.from('users').insert({
       uid: CB_UID,
       username: u,
-      passHash: simpleHash(p),
-      createdAt: new Date()
+      passhash: simpleHash(p)
     });
+    if(error){ showAuthError('注册失败: '+error.message); return; }
     CB_USERNAME = u;
     localStorage.setItem('cb_uid', CB_UID);
     localStorage.setItem('cb_user', u);
@@ -947,10 +929,10 @@ async function doLogin(){
   if(!u||!p){ showAuthError('请填写用户名和密码'); return; }
   const btn=document.getElementById('loginBtn'); btn.disabled=true; btn.textContent='登录中…';
   try {
-    await cbAnonymousLogin();
-    const { data: users } = await CB_DB.collection('users').where({username:u}).get();
+    const { data: users, error } = await SB.from('users').select('*').eq('username', u);
+    if(error){ showAuthError('查询失败: '+error.message); return; }
     if(!users || users.length===0){ showAuthError('用户名不存在'); return; }
-    if(users[0].passHash !== simpleHash(p)){ showAuthError('密码错误'); return; }
+    if(users[0].passhash !== simpleHash(p)){ showAuthError('密码错误'); return; }
     CB_UID = users[0].uid;
     CB_USERNAME = u;
     localStorage.setItem('cb_uid', CB_UID);
@@ -970,10 +952,6 @@ async function afterAuth(){
 async function doLogout(){
   if(!CB_UID){ return; }
   if(!confirm('确定退出登录吗？本地缓存将清除。')) return;
-  try {
-    const auth = CB_APP.auth;
-    await auth.signOut();
-  } catch(e){}
   CB_UID=null; CB_USERNAME=null;
   localStorage.removeItem('cb_uid');
   localStorage.removeItem('cb_user');
@@ -987,7 +965,8 @@ async function loadCloudDB(){
   cloudLoading=true;
   setCloudStatus('syncing','同步中…');
   try {
-    const { data } = await CB_DB.collection('workbench_data').where({uid:CB_UID}).get();
+    const { data, error } = await SB.from('workbench_data').select('data').eq('uid', CB_UID);
+    if(error) throw error;
     if(data && data.length>0){
       const cloudData = data[0].data;
       if(cloudData){
@@ -998,7 +977,6 @@ async function loadCloudDB(){
         refreshAllUI();
       }
     } else {
-      // First login — push local data to cloud
       await saveCloudDB(true);
     }
     setCloudStatus('online', CB_USERNAME);
@@ -1017,21 +995,18 @@ async function saveCloudDB(force){
   setCloudStatus('syncing','同步中…');
   try {
     const slimData = JSON.parse(JSON.stringify(DB));
-    // 查找是否已有云端记录
-    const { data } = await CB_DB.collection('workbench_data').where({uid:CB_UID}).get();
-    if(data && data.length>0){
-      // Update existing
-      await CB_DB.collection('workbench_data').doc(data[0]._id).update({
-        data: slimData,
-        updatedAt: new Date()
-      });
+    const { data: existing } = await SB.from('workbench_data').select('id').eq('uid', CB_UID);
+    if(existing && existing.length>0){
+      const { error } = await SB.from('workbench_data')
+        .update({ data: slimData, updated_at: new Date().toISOString() })
+        .eq('uid', CB_UID);
+      if(error) throw error;
     } else {
-      // Create new
-      await CB_DB.collection('workbench_data').add({
+      const { error } = await SB.from('workbench_data').insert({
         uid: CB_UID,
-        data: slimData,
-        createdAt: new Date()
+        data: slimData
       });
+      if(error) throw error;
     }
     setCloudStatus('online', CB_USERNAME);
   } catch(e){
@@ -1056,12 +1031,12 @@ async function uploadCloudImage(base64Data, fileName){
     const u8arr=new Uint8Array(bstr.length);
     for(let i=0;i<bstr.length;i++) u8arr[i]=bstr.charCodeAt(i);
     const blob=new Blob([u8arr],{type:mime});
-    const filePath = 'inspirations/'+CB_UID+'/'+(fileName||('img_'+Date.now()))+'.'+(mime.split('/')[1]||'png');
-    const { data:uploadData, error } = await CB_APP.storage.from().upload(filePath, blob);
+    const ext=mime.split('/')[1]||'png';
+    const filePath = CB_UID+'/'+(fileName||('img_'+Date.now()))+'.'+ext;
+    const { error } = await SB.storage.from('inspirations').upload(filePath, blob, { contentType: mime, upsert: true });
     if(error){ console.error('Upload error', error); return base64Data; }
-    // Get public URL
-    const { data: urlData } = await CB_APP.storage.from().getPublicUrl(uploadData.fullPath);
-    return urlData || base64Data;
+    const { data: urlData } = SB.storage.from('inspirations').getPublicUrl(filePath);
+    return urlData.publicUrl || base64Data;
   } catch(e){
     console.error('Image upload error', e);
     return base64Data;
@@ -2489,27 +2464,23 @@ function refreshAllUI(){
 window.addEventListener('DOMContentLoaded',()=>{
   refreshAllUI();
   setTimeout(checkDeadlineAlerts,500);
-  // Init CloudBase + check auth
-  const cbOk=initCloudBase();
+  // Init Supabase + check auth
+  const cbOk=initSupabase();
   if(cbOk){
     const savedUid=localStorage.getItem('cb_uid');
     const savedUser=localStorage.getItem('cb_user');
     if(savedUid && savedUser){
-      // Quick restore — will verify with cloud in background
       CB_UID=savedUid; CB_USERNAME=savedUser;
       document.getElementById('authOverlay').classList.add('hidden');
       setCloudStatus('online', savedUser);
-      // Anonymous login then load cloud data
-      cbAnonymousLogin().then(()=>loadCloudDB()).catch(e=>{
+      loadCloudDB().catch(e=>{
         console.warn('Cloud restore failed', e);
         setCloudStatus('offline','离线模式');
       });
     } else {
-      // Show login screen
       document.getElementById('authOverlay').classList.remove('hidden');
     }
   } else {
-    // No cloud config — hide auth, use local mode
     document.getElementById('authOverlay').classList.add('hidden');
     setCloudStatus('offline','本地模式');
   }

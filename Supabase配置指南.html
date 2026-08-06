@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Supabase 配置指南</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue','PingFang SC',sans-serif; background:#F2F2F7; color:#1C1C1E; line-height:1.7; padding:20px; max-width:800px; margin:0 auto; }
+h1 { font-size:28px; margin-bottom:8px; color:#007AFF; }
+h2 { font-size:22px; margin:24px 0 12px; color:#1C1C1E; border-bottom:2px solid #007AFF; padding-bottom:6px; }
+h3 { font-size:18px; margin:16px 0 8px; }
+.step { background:#fff; border-radius:12px; padding:20px; margin:12px 0; box-shadow:0 1px 3px rgba(0,0,0,0.08); }
+.step-num { display:inline-block; width:28px; height:28px; background:#007AFF; color:#fff; border-radius:50%; text-align:center; line-height:28px; font-weight:bold; margin-right:8px; }
+code { background:#f0f0f0; padding:2px 6px; border-radius:4px; font-family:'SF Mono',Menlo,monospace; font-size:14px; color:#d63384; }
+pre { background:#1e1e1e; color:#d4d4d4; padding:16px; border-radius:8px; overflow-x:auto; margin:12px 0; font-size:13px; line-height:1.5; }
+pre code { background:none; color:inherit; padding:0; }
+.note { background:#fff3cd; border-left:4px solid #FF9500; padding:12px 16px; margin:12px 0; border-radius:4px; }
+.tip { background:#d4edda; border-left:4px solid #34C759; padding:12px 16px; margin:12px 0; border-radius:4px; }
+.warn { background:#f8d7da; border-left:4px solid #FF3B30; padding:12px 16px; margin:12px 0; border-radius:4px; }
+.copy-btn { background:#007AFF; color:#fff; border:none; padding:6px 14px; border-radius:6px; cursor:pointer; font-size:13px; margin:4px 0; }
+.copy-btn:hover { background:#0051D5; }
+</style>
+</head>
+<body>
+
+<h1>Supabase 配置指南</h1>
+<p>按以下步骤创建 Supabase 项目并配置后端，替换原来的腾讯云开发。</p>
+
+<div class="note">
+<strong>前提：</strong>Supabase 免费版提供 500MB 数据库、1GB 文件存储、50000 月活用户，完全够用。
+</div>
+
+<h2>第一步：注册 Supabase 账号</h2>
+<div class="step">
+<span class="step-num">1</span>打开 <a href="https://supabase.com" target="_blank">https://supabase.com</a>
+<br><span class="step-num">2</span>点击右上角 <strong>Start your project</strong>
+<br><span class="step-num">3</span>用 GitHub 账号授权登录（推荐，最快捷）
+</div>
+
+<h2>第二步：创建新项目</h2>
+<div class="step">
+<span class="step-num">1</span>登录后点击 <strong>New Project</strong>
+<br><span class="step-num">2</span>填写项目名称：<code>ai-workbench</code>（随意）
+<br><span class="step-num">3</span>设置数据库密码：<strong>务必记住</strong>（记到备忘录里）
+<br><span class="step-num">4</span>选择区域：<strong>Northeast Asia (Tokyo)</strong> 或 <strong>Southeast Asia (Singapore)</strong>（离中国最近）
+<br><span class="step-num">5</span>点击 <strong>Create new project</strong>，等待 1-2 分钟初始化完成
+</div>
+
+<h2>第三步：创建数据库表</h2>
+<div class="step">
+<p>项目创建完成后，点击左侧 <strong>SQL Editor</strong>，点击 <strong>New query</strong>，粘贴以下 SQL 并点击 <strong>Run</strong>：</p>
+<button class="copy-btn" onclick="copySQL()">复制 SQL</button>
+<pre id="sqlBlock"><code>-- 1. 用户表
+CREATE TABLE IF NOT EXISTS users (
+  id BIGSERIAL PRIMARY KEY,
+  uid TEXT UNIQUE NOT NULL,
+  username TEXT UNIQUE NOT NULL,
+  passhash TEXT NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 2. 工作台数据表
+CREATE TABLE IF NOT EXISTS workbench_data (
+  id BIGSERIAL PRIMARY KEY,
+  uid TEXT NOT NULL,
+  data JSONB,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 3. 创建索引
+CREATE INDEX IF NOT EXISTS idx_users_username ON users(username);
+CREATE INDEX IF NOT EXISTS idx_users_uid ON users(uid);
+CREATE INDEX IF NOT EXISTS idx_workbench_uid ON workbench_data(uid);
+
+-- 4. 开启行级安全（RLS）
+ALTER TABLE users ENABLE ROW LEVEL SECURITY;
+ALTER TABLE workbench_data ENABLE ROW LEVEL SECURITY;
+
+-- 5. 设置 RLS 策略（允许 anon 角色读写）
+CREATE POLICY "allow_all_users" ON users FOR ALL TO anon, authenticated USING (true) WITH CHECK (true);
+CREATE POLICY "allow_all_workbench" ON workbench_data FOR ALL TO anon, authenticated USING (true) WITH CHECK (true);
+
+-- 6. 创建存储桶（用于灵感图片上传）
+INSERT INTO storage.buckets (id, name, public) VALUES ('inspirations', 'inspirations', true)
+ON CONFLICT (id) DO NOTHING;
+
+-- 7. 存储桶策略（允许匿名上传和读取）
+CREATE POLICY "allow_storage_all" ON storage.objects FOR ALL TO anon, authenticated USING (bucket_id = 'inspirations') WITH CHECK (bucket_id = 'inspirations');</code></pre>
+</div>
+
+<script>
+function copySQL(){
+  const text=document.getElementById('sqlBlock').innerText;
+  navigator.clipboard.writeText(text).then(()=>{
+    const btn=document.querySelector('.copy-btn');
+    const orig=btn.textContent;
+    btn.textContent='已复制!';
+    setTimeout(()=>btn.textContent=orig,2000);
+  });
+}
+</script>
+
+<h2>第四步：获取 Project URL 和 API Key</h2>
+<div class="step">
+<span class="step-num">1</span>点击左侧 <strong>Project Settings</strong>（齿轮图标）
+<br><span class="step-num">2</span>点击 <strong>API</strong>
+<br><span class="step-num">3</span>找到以下两项，复制下来：
+<ul style="margin:8px 0 8px 20px;">
+<li><strong>Project URL</strong> — 形如 <code>https://xxxxx.supabase.co</code></li>
+<li><strong>anon public key</strong> — 一长串 <code>eyJ...</code> 开头的字符串</li>
+</ul>
+<div class="warn">
+<strong>注意：</strong>只需要 anon key，<strong>不要</strong>用 service_role key（那个有管理员权限，不能放前端）。
+</div>
+</div>
+
+<h2>第五步：填入代码</h2>
+<div class="step">
+<p>打开 <code>index.html</code>，找到第 <strong>849</strong> 行附近的配置：</p>
+<pre><code>const SB_CONFIG = {
+  url: '',            ← 把 Project URL 粘贴到这里
+  anonKey: ''         ← 把 anon key 粘贴到这里
+};</code></pre>
+<p>填完后类似这样：</p>
+<pre><code>const SB_CONFIG = {
+  url: 'https://abcdefgh.supabase.co',
+  anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'
+};</code></pre>
+</div>
+
+<h2>第六步：测试</h2>
+<div class="step">
+<span class="step-num">1</span>用浏览器打开 <code>index.html</code>
+<br><span class="step-num">2</span>应该看到登录/注册界面（不再是"本地模式"）
+<br><span class="step-num">3</span>注册一个账号，然后登录
+<br><span class="step-num">4</span>在手机上打开同一个页面，用同一账号登录，数据应该同步
+</div>
+
+<div class="tip">
+<strong>如果显示"本地模式"：</strong>说明 url 或 anonKey 没填对，检查一下引号和拼写。
+</div>
+
+<h2>常见问题</h2>
+
+<h3>Q: Supabase 免费版有什么限制？</h3>
+<p>500MB 数据库、1GB 文件存储、50000 月活用户。对于个人工作台完全够用，不需要付费。</p>
+
+<h3>Q: 数据安全吗？</h3>
+<p>使用了 RLS（行级安全）策略，anon key 只能读写允许的表。密码用 hash 存储（非明文），但不是加密安全的——如果需要更高安全性可以后续升级为 Supabase Auth。</p>
+
+<h3>Q: 可以从腾讯云开发迁移数据吗？</h3>
+<p>之前的数据存在腾讯云开发的数据库里。如果你有重要数据，可以手动导出后再导入 Supabase。如果是新开始使用，直接注册新账号即可。</p>
+
+<h3>Q: 手机访问需要配置什么？</h3>
+<p>Supabase 不需要配置安全域名，默认允许所有来源访问。直接部署到 GitHub Pages 或任何静态托管即可。</p>
+
+</body>
+</html>
