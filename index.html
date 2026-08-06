@@ -450,7 +450,7 @@ label { font-size:13px; color:var(--text-light); font-weight:500; margin-bottom:
     </div>
     <div class="nav-item" data-section="project" onclick="switchSection('project')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
-      排单管理
+      工作管理
     </div>
     <div class="nav-item" data-section="income" onclick="switchSection('income')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
@@ -597,7 +597,7 @@ label { font-size:13px; color:var(--text-light); font-weight:500; margin-bottom:
 
     <!-- ===== Project / Queue ===== -->
     <div class="section" id="section-project">
-      <div class="section-header">排单管理</div>
+      <div class="section-header">工作管理</div>
       <div class="card">
         <div class="goal-filter-tabs">
           <div class="goal-filter-tab active" data-queue-tab="stats" onclick="setQueueTab('stats')">工作统计 <span class="proj-count-badge zero" id="statsBadge">0</span></div>
@@ -1397,7 +1397,7 @@ function initGoalPeriodSelectors(){
   const now=new Date();
   const yearSel=document.getElementById('goalYear');
   yearSel.innerHTML='';
-  for(let y=now.getFullYear();y<=now.getFullYear()+10;y++) yearSel.innerHTML+=`<option value="${y}" ${y===now.getFullYear()?'selected':''}>${y}年</option>`;
+  for(let y=2025;y<=2075;y++) yearSel.innerHTML+=`<option value="${y}" ${y===now.getFullYear()?'selected':''}>${y}年</option>`;
   const monthSel=document.getElementById('goalMonth');
   monthSel.innerHTML='';
   for(let m=1;m<=12;m++) monthSel.innerHTML+=`<option value="${m}" ${m===now.getMonth()+1?'selected':''}>${m}月</option>`;
@@ -1523,7 +1523,7 @@ function initIncomeSelectors(){
   yS.innerHTML='';
   const allInc=getAllIncome();
   const years=[...new Set(allInc.map(i=>i.year))].sort((a,b)=>a-b);
-  for(let y=Math.min(now.getFullYear(),...(years.length?[years[0]]:[]));y<=now.getFullYear()+10;y++) yS.innerHTML+=`<option ${y===now.getFullYear()?'selected':''}>${y}</option>`;
+  for(let y=2025;y<=2075;y++) yS.innerHTML+=`<option ${y===now.getFullYear()?'selected':''}>${y}</option>`;
   if(!yS.value) yS.value=now.getFullYear();
   const mS=document.getElementById('incomeMonth');
   mS.innerHTML='<option value="0">全年</option>';
@@ -1633,7 +1633,7 @@ function renderIncomeDist(){
   incomeDistChart=new Chart(ctx2,{type:'doughnut',data:{labels:dist.map(d=>`${d.name} (${d.count}笔 ¥${d.amount.toFixed(2)})`),datasets:[{data:dist.map(d=>d.amount),backgroundColor:colors,borderWidth:2,borderColor:'#fff'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{font:{size:12}}},tooltip:{callbacks:{label:c=>`${c.label}: ¥${c.raw.toFixed(2)}`}}}}});
 }
 
-function deleteIncome(id){ if(String(id).startsWith('proj_')){ showToast('排单收入无法直接删除，请在排单管理中修改'); return; } DB.income=DB.income.filter(x=>x.id!==id); saveDBDebounced(); renderIncome(); }
+function deleteIncome(id){ if(String(id).startsWith('proj_')){ showToast('排单收入无法直接删除，请在工作管理中修改'); return; } DB.income=DB.income.filter(x=>x.id!==id); saveDBDebounced(); renderIncome(); }
 
 function renderIncomeTable(year,month){
   let data=getAllIncome().filter(i=>i.year===year);
@@ -1839,11 +1839,13 @@ function updateBadges(){
   set('cardCustomBadge',cardCustomRemaining);
   set('paintingBadge',paintingRemaining);
   set('otherBadge',otherRemaining);
-  // Stats badge: total items for current year
-  const curYear=String(new Date().getFullYear());
+  // Stats badge: uncompleted count (red) or 0 (green)
   const allItems=[...DB.projects.cardTemplate,...DB.projects.cardCustom,...DB.projects.painting,...DB.projects.other];
-  const statsCount=allItems.filter(p=>p.createdDate&&p.createdDate.startsWith(curYear)).length;
-  set('statsBadge',statsCount);
+  const uncompletedCount=allItems.filter(p=>{
+    if(p.total!==undefined) return p.current<p.total;
+    return true;
+  }).length;
+  set('statsBadge',uncompletedCount);
 }
 function deadlineTagHTML(deadline,done){
   if(!deadline) return '';
@@ -1915,9 +1917,11 @@ function renderCardTemplates(){
   if(items.length===0){ el.innerHTML='<div class="empty-state"><div style="font-size:36px;opacity:.2;">📋</div>暂无模板</div>'; return; }
   el.innerHTML=items.map(p=>{
     const done=p.current>=p.total, remaining=Math.max(0,p.total-p.current), pct=p.total>0?Math.round(p.current/p.total*100):0;
+    const tplIncome=DB.income.filter(i=>i.detail==='卡面-模板'&&i.project===p.name).reduce((s,i)=>s+(i.amount||0),0);
     return `<div class="queue-item ${done?'done':''}">
       <div class="queue-item-header">
         <span class="queue-item-name"><input class="inline-input" value="${escapeAttr(p.name)}" onchange="updateCardTemplate('${p.id}','name',this.value)" style="font-weight:600;"></span>
+        ${tplIncome>0?`<span style="font-size:12px;color:var(--success);font-weight:600;white-space:nowrap;">总收入 ¥${tplIncome.toFixed(2)}</span>`:''}
       </div>
       <div class="queue-item-fields" style="flex-direction:row;align-items:center;gap:0;margin-top:6px;width:100%;">
         <span style="flex:1;display:flex;align-items:center;gap:4px;white-space:nowrap;">总数: <input class="inline-input" type="number" value="${p.total}" onchange="updateCardTemplate('${p.id}','total',this.value)" style="width:100%;text-align:center;"></span>
