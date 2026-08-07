@@ -10,6 +10,8 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="app-icon.jpg">
+<link rel="icon" href="app-icon.jpg">
 <meta name="apple-mobile-web-app-title" content="工作台">
 <style>
 :root {
@@ -1397,7 +1399,7 @@ function initGoalPeriodSelectors(){
   const now=new Date();
   const yearSel=document.getElementById('goalYear');
   yearSel.innerHTML='';
-  for(let y=2025;y<=2075;y++) yearSel.innerHTML+=`<option value="${y}" ${y===now.getFullYear()?'selected':''}>${y}年</option>`;
+  for(let y=2025;y<=2050;y++) yearSel.innerHTML+=`<option value="${y}" ${y===now.getFullYear()?'selected':''}>${y}年</option>`;
   const monthSel=document.getElementById('goalMonth');
   monthSel.innerHTML='';
   for(let m=1;m<=12;m++) monthSel.innerHTML+=`<option value="${m}" ${m===now.getMonth()+1?'selected':''}>${m}月</option>`;
@@ -1523,7 +1525,7 @@ function initIncomeSelectors(){
   yS.innerHTML='';
   const allInc=getAllIncome();
   const years=[...new Set(allInc.map(i=>i.year))].sort((a,b)=>a-b);
-  for(let y=2025;y<=2075;y++) yS.innerHTML+=`<option ${y===now.getFullYear()?'selected':''}>${y}</option>`;
+  for(let y=2025;y<=2050;y++) yS.innerHTML+=`<option ${y===now.getFullYear()?'selected':''}>${y}</option>`;
   if(!yS.value) yS.value=now.getFullYear();
   const mS=document.getElementById('incomeMonth');
   mS.innerHTML='<option value="0">全年</option>';
