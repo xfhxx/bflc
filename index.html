@@ -1612,7 +1612,7 @@ function renderIncomeDist(){
     if(!cats[cat])cats[cat]={count:0,amount:0};
     cats[cat].count++; cats[cat].amount+=i.amount;
   });
-  const catColors={'模板会':'var(--income-cat1)','定制':'var(--income-cat2)','绘画创作':'var(--income-cat3)','其他':'var(--income-cat4)'};
+  const catColors={'模板会':'--income-cat1','定制':'--income-cat2','绘画创作':'--income-cat3','其他':'--income-cat4'};
   const fallbackColors=['#5856D6','#30B0C7','#AF52DE','#FFCC00','#FF6482','#5AC8FA'];
   const dist=Object.entries(cats).map(([n,v])=>({name:n,...v})).sort((a,b)=>b.amount-a.amount);
   const colors=dist.map((d,i)=>{
