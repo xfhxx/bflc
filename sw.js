@@ -1,8 +1,9 @@
-const CACHE_NAME = 'workbench-v3';
+const CACHE_NAME = 'workbench-v4';
 const ASSETS = [
   './',
   './index.html',
   './manifest.json',
+  './app-icon.jpg',
   'https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js',
   'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js'
 ];
