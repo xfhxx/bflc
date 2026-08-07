@@ -474,7 +474,7 @@ label { font-size:13px; color:var(--text-light); font-weight:500; margin-bottom:
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
       设置
     </div>
-    <div class="cloud-status" id="cloudStatus" onclick="doLogout()">
+    <div class="cloud-status" id="cloudStatus">
       <span class="cloud-dot" id="cloudDot"></span>
       <span id="cloudUser">未登录</span>
     </div>
@@ -767,6 +767,11 @@ label { font-size:13px; color:var(--text-light); font-weight:500; margin-bottom:
     </div>
 
     <button class="btn btn-primary" style="width:100%;margin-top:16px;" onclick="applySettings()">应用设置</button>
+
+    <div style="display:flex;gap:10px;margin-top:12px;">
+      <button class="btn" style="flex:1;background:var(--bg);color:var(--text);" onclick="location.reload()">刷新页面</button>
+      <button class="btn" style="flex:1;background:#FF3B301A;color:var(--danger);" onclick="doLogout()">退出登录</button>
+    </div>
   </div>
 </div>
 
