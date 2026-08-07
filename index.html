@@ -207,7 +207,7 @@ label { font-size:13px; color:var(--text-light); font-weight:500; margin-bottom:
 .income-summary { display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:12px; margin-bottom:18px; }
 .income-stat { background:#fff; border:1px solid var(--border); padding:16px; border-radius:12px; text-align:center; }
 .income-stat .label { font-size:12px; color:var(--text-light); }
-.income-stat .value { font-size:22px; font-weight:700; margin-top:4px; color:var(--primary); }
+.income-stat .value { font-size:22px; font-weight:700; margin-top:4px; color:var(--income-cat1); }
 .chart-container { position:relative; height:260px; margin-bottom:12px; }
 .income-table { width:100%; border-collapse:collapse; font-size:13px; }
 .income-table th { text-align:left; padding:10px; background:var(--bg); border-bottom:1px solid var(--border); font-weight:600; color:var(--text-light); }
@@ -1582,17 +1582,19 @@ function renderIncome(){
 
   const ctx1=document.getElementById('incomeMonthChart').getContext('2d');
   if(incomeMonthChart) incomeMonthChart.destroy();
+  const incColor=getComputedStyle(document.documentElement).getPropertyValue('--income-cat1').trim()||'#007AFF';
+  const incColorTint=incColor+'B3';
   if(month>0){
     document.getElementById('incomeChartTitle').textContent=`${year}年${month}月每日对比`;
     const daysInMonth=new Date(year,month,0).getDate();
     const daily=Array(daysInMonth).fill(0);
     yd.forEach(i=>{ if(i.day) daily[i.day-1]+=i.amount; });
-    incomeMonthChart=new Chart(ctx1,{type:'bar',data:{labels:Array.from({length:daysInMonth},(_,i)=>(i+1)+'日'),datasets:[{label:`${month}月收入`,data:daily,backgroundColor:'rgba(0,122,255,0.7)',borderColor:'#007AFF',borderWidth:1,borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`¥${c.raw.toFixed(2)}`}}},scales:{y:{beginAtZero:true,ticks:{callback:v=>'¥'+v}},x:{ticks:{maxTicksLimit:15}}}}});
+    incomeMonthChart=new Chart(ctx1,{type:'bar',data:{labels:Array.from({length:daysInMonth},(_,i)=>(i+1)+'日'),datasets:[{label:`${month}月收入`,data:daily,backgroundColor:incColorTint,borderColor:incColor,borderWidth:1,borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`¥${c.raw.toFixed(2)}`}}},scales:{y:{beginAtZero:true,ticks:{callback:v=>'¥'+v}},x:{ticks:{maxTicksLimit:15}}}}});
   } else {
     document.getElementById('incomeChartTitle').textContent=`${year}年全年月度对比`;
     const monthly=Array(12).fill(0);
     yd.forEach(i=>monthly[i.month-1]+=i.amount);
-    incomeMonthChart=new Chart(ctx1,{type:'bar',data:{labels:['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'],datasets:[{label:`${year}年收入`,data:monthly,backgroundColor:'rgba(0,122,255,0.7)',borderColor:'#007AFF',borderWidth:1,borderRadius:6}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`¥${c.raw.toFixed(2)}`}}},scales:{y:{beginAtZero:true,ticks:{callback:v=>'¥'+v}}}}});
+    incomeMonthChart=new Chart(ctx1,{type:'bar',data:{labels:['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'],datasets:[{label:`${year}年收入`,data:monthly,backgroundColor:incColorTint,borderColor:incColor,borderWidth:1,borderRadius:6}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`¥${c.raw.toFixed(2)}`}}},scales:{y:{beginAtZero:true,ticks:{callback:v=>'¥'+v}}}}});
   }
   renderIncomeDist();
   renderIncomeTable(year,month);
@@ -1649,7 +1651,7 @@ function renderIncomeTable(year,month){
   if(data.length===0){ table.innerHTML='<tr><td colspan="7" style="text-align:center;padding:30px;color:var(--text-light);">暂无收入记录</td></tr>'; return; }
   const catMap={'卡面-模板':'模板会','卡面-定制':'定制','绘画创作':'绘画创作','其他排单':'其他'};
   const s=[...data].sort((a,b)=>(b.month-a.month)||(b.day-b.day)||(b.date>a.date?1:-1));
-  table.innerHTML=`<thead><tr><th>年</th><th>月</th><th>日</th><th>项目</th><th>金额</th><th>来源</th><th>操作</th></tr></thead><tbody>${s.map(i=>`<tr><td>${i.year}</td><td>${i.month}</td><td>${i.day||'-'}</td><td>${escapeHtml(i.project)}</td><td style="color:var(--success);font-weight:600;">¥${i.amount.toFixed(2)}</td><td>${escapeHtml(catMap[i.detail]||i.detail||'其他')}${i._auto?' <span style="font-size:10px;color:var(--text-lighter);">(自动)</span>':''}</td><td>${i._auto?'-':`<button class="todo-btn" onclick="deleteIncome('${i.id}')">🗑</button>`}</td></tr>`).join('')}</tbody>`;
+  table.innerHTML=`<thead><tr><th>年</th><th>月</th><th>日</th><th>项目</th><th>金额</th><th>来源</th><th>操作</th></tr></thead><tbody>${s.map(i=>`<tr><td>${i.year}</td><td>${i.month}</td><td>${i.day||'-'}</td><td>${escapeHtml(i.project)}</td><td style="color:var(--income-cat1);font-weight:600;">¥${i.amount.toFixed(2)}</td><td>${escapeHtml(catMap[i.detail]||i.detail||'其他')}${i._auto?' <span style="font-size:10px;color:var(--text-lighter);">(自动)</span>':''}</td><td>${i._auto?'-':`<button class="todo-btn" onclick="deleteIncome('${i.id}')">🗑</button>`}</td></tr>`).join('')}</tbody>`;
 }
 
 // ============================================================
