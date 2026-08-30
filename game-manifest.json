@@ -1,0 +1,24 @@
+{
+  "name": "游戏工作台",
+  "short_name": "游戏工作台",
+  "description": "升级你的每一天 - 游戏化等级签到工作台",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#EAE6DF",
+  "theme_color": "#8B9DAA",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "app-icon.jpg",
+      "sizes": "192x192",
+      "type": "image/jpeg",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "app-icon.jpg",
+      "sizes": "512x512",
+      "type": "image/jpeg",
+      "purpose": "any maskable"
+    }
+  ]
+}
