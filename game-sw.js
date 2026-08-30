@@ -1,4 +1,4 @@
-const CACHE_NAME = 'game-workbench-v1';
+const CACHE_NAME = 'game-workbench-v2';
 const ASSETS = [
   './index.html',
   './game-manifest.json',
@@ -22,15 +22,12 @@ self.addEventListener('activate', e => {
 self.addEventListener('fetch', e => {
   if (e.request.method !== 'GET') return;
   e.respondWith(
-    caches.match(e.request).then(cached => {
-      const fetchPromise = fetch(e.request).then(response => {
-        if (response && response.status === 200) {
-          const clone = response.clone();
-          caches.open(CACHE_NAME).then(c => c.put(e.request, clone));
-        }
-        return response;
-      }).catch(() => cached);
-      return cached || fetchPromise;
-    })
+    fetch(e.request).then(response => {
+      if (response && response.status === 200) {
+        const clone = response.clone();
+        caches.open(CACHE_NAME).then(c => c.put(e.request, clone));
+      }
+      return response;
+    }).catch(() => caches.match(e.request))
   );
 });
