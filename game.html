@@ -490,7 +490,7 @@ input,button,textarea,select{font-family:inherit;}
 // ============================================================
 const SB_CONFIG = {
   url: 'https://fbwhagnlyyksbiaxgzqn.supabase.co',
-  anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZid2hhZ25seXlrc2JpYXhnenFuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU5OTg3MTIsImV4cCI6MjEwMTU3NDcxMn0.7R-9o6SXFx78taaLJ-SlnoDOLoUZ_PI51-K49eihy-4'
+  anonKey: 'sb_publishable_8ihI_zUf84zQNuyxMVX-cQ_1Bd6U6kq'
 };
 let SB = null, CB_READY = false, CB_UID = null, CB_USERNAME = null;
 let cloudSaveTimer = null, cloudLoading = false;
@@ -833,7 +833,7 @@ async function doRegister(){
     if(existing && existing.length>0){ showAuthError('用户名已存在', true); return; }
     CB_UID = uid();
     const { error } = await SB.from('game_users').insert({
-      uid: CB_UID, username: u, passhash: simpleHash(p)
+      uid: CB_UID, username: u, password: simpleHash(p)
     });
     if(error){ showAuthError('注册失败: '+error.message, true); return; }
     CB_USERNAME = u;
@@ -853,7 +853,7 @@ async function doLogin(){
     const { data: users, error } = await SB.from('game_users').select('*').eq('username', u);
     if(error){ showAuthError('查询失败: '+error.message); return; }
     if(!users || users.length===0){ showAuthError('用户名不存在'); return; }
-    if(users[0].passhash !== simpleHash(p)){ showAuthError('密码错误'); return; }
+    if(users[0].password !== simpleHash(p)){ showAuthError('密码错误'); return; }
     CB_UID = users[0].uid;
     CB_USERNAME = u;
     localStorage.setItem('game_uid', CB_UID);
