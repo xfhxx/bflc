@@ -892,8 +892,18 @@ async function loadCloudDB(){
     if(data && data.length>0){
       const cloudData = data[0].data;
       if(cloudData){
+        const localStr = localStorage.getItem(STORE_KEY);
+        const localDB = localStr ? JSON.parse(localStr) : {};
         DB = Object.assign({}, defaultData, cloudData);
         migrateData();
+        if(localDB.checkInDates){
+          const merged = new Set([...DB.checkInDates, ...localDB.checkInDates]);
+          DB.checkInDates = Array.from(merged).sort();
+        }
+        if(localDB.expLog){
+          const cloudDates = new Set((DB.expLog||[]).map(e=>e.date));
+          localDB.expLog.forEach(e=>{ if(!cloudDates.has(e.date)) DB.expLog.unshift(e); });
+        }
         localStorage.setItem(STORE_KEY, JSON.stringify(DB));
       }
     } else {
@@ -999,6 +1009,8 @@ function doCheckIn(){
   }
   DB.checkInDates.push(todayStr());
   DB.checkInDates.sort();
+  scheduleSave();
+  renderCheckIn();
   addExp(10, '每日签到');
   showToast('✅ 签到成功 +10 EXP');
 }
