@@ -894,17 +894,21 @@ async function loadCloudDB(){
       if(cloudData){
         const localStr = localStorage.getItem(STORE_KEY);
         const localDB = localStr ? JSON.parse(localStr) : {};
+        const localExp = localDB.totalExp || 0;
         DB = Object.assign({}, defaultData, cloudData);
         migrateData();
+        if(localExp > (DB.totalExp || 0)){
+          DB.totalExp = localExp;
+          DB.expLog = localDB.expLog || DB.expLog;
+        }
         if(localDB.checkInDates){
           const merged = new Set([...DB.checkInDates, ...localDB.checkInDates]);
           DB.checkInDates = Array.from(merged).sort();
         }
-        if(localDB.expLog){
-          const cloudDates = new Set((DB.expLog||[]).map(e=>e.date));
-          localDB.expLog.forEach(e=>{ if(!cloudDates.has(e.date)) DB.expLog.unshift(e); });
-        }
         localStorage.setItem(STORE_KEY, JSON.stringify(DB));
+        if(localExp > (DB.totalExp || 0)){
+          await saveCloudDB(true);
+        }
       }
     } else {
       await saveCloudDB(true);

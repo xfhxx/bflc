@@ -1,4 +1,4 @@
-const CACHE_NAME = 'game-workbench-v3';
+const CACHE_NAME = 'game-workbench-v4';
 const ASSETS = [
   './index.html',
   './game-manifest.json',
