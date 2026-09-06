@@ -894,21 +894,28 @@ async function loadCloudDB(){
       if(cloudData){
         const localStr = localStorage.getItem(STORE_KEY);
         const localDB = localStr ? JSON.parse(localStr) : {};
-        const localExp = localDB.totalExp || 0;
         DB = Object.assign({}, defaultData, cloudData);
         migrateData();
-        if(localExp > (DB.totalExp || 0)){
-          DB.totalExp = localExp;
-          DB.expLog = localDB.expLog || DB.expLog;
-        }
         if(localDB.checkInDates){
           const merged = new Set([...DB.checkInDates, ...localDB.checkInDates]);
           DB.checkInDates = Array.from(merged).sort();
         }
+        const logMap = new Map();
+        const addToMap = (entries) => {
+          (entries || []).forEach(e => {
+            const key = entryDateKey(e.date) + '|' + e.source;
+            if(!logMap.has(key) || e.amount > logMap.get(key).amount){
+              logMap.set(key, { ...e });
+            }
+          });
+        };
+        addToMap(DB.expLog);
+        addToMap(localDB.expLog);
+        DB.expLog = Array.from(logMap.values()).sort((a,b) => new Date(b.date) - new Date(a.date));
+        if(DB.expLog.length > 500) DB.expLog = DB.expLog.slice(0, 500);
+        DB.totalExp = DB.expLog.reduce((sum, e) => sum + e.amount, 0);
         localStorage.setItem(STORE_KEY, JSON.stringify(DB));
-        if(localExp > (DB.totalExp || 0)){
-          await saveCloudDB(true);
-        }
+        await saveCloudDB(true);
       }
     } else {
       await saveCloudDB(true);
