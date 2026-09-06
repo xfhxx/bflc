@@ -1204,6 +1204,10 @@ function deleteLogEntry(idx){
   const entry = DB.expLog[idx];
   if(!entry) return;
   DB.totalExp = Math.max(0, DB.totalExp - entry.amount);
+  if(entry.source === '每日签到'){
+    const entryDate = entryDateKey(entry.date);
+    DB.checkInDates = DB.checkInDates.filter(d => d !== entryDate);
+  }
   DB.expLog.splice(idx, 1);
   logEditState = null;
   scheduleSave();
